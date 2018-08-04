@@ -20,10 +20,18 @@ func InitDatabase(host, name string) (Db, error) {
 
 type Db interface {
 	Close()
+	Drop(dbName string) error
 	AddUser(user *User) error
 	RemoveUser(id bson.ObjectId) error
 	GetUser(id bson.ObjectId) (*User, error)
+	GetCollaborators(ids []bson.ObjectId) ([]User, error)
+	GetCollaborating(id bson.ObjectId) ([]User, error)
+	GetUserByEmail(email string) (*User, error)
 	UpdateUser(id bson.ObjectId, updater interface{}) error
+	SetContent(id bson.ObjectId, value string) error
+	GetContent(id bson.ObjectId) (string, error)
+	AddCollaborator(id bson.ObjectId, collaboratorId bson.ObjectId) error
+	RemoveCollaborator(id bson.ObjectId, collaboratorId bson.ObjectId) error
 }
 
 type db struct {
@@ -34,6 +42,13 @@ type db struct {
 func (d *db) Close() {
 	log.Println("Closing db")
 	d.sess.Close()
+}
+
+func (d *db) Drop(dbName string) error {
+	sess := d.sess.Clone()
+	defer sess.Close()
+
+	return sess.DB(dbName).DropDatabase()
 }
 
 func (d *db) withCollection(name string, fn func(c *mgo.Collection) error) error {
