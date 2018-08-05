@@ -5,13 +5,13 @@ import (
 	"flag"
 	"log"
 	"maus/together-go/database"
+	"maus/together-go/routing"
 	"net/http"
 	"os"
 	"os/signal"
 	"time"
 
 	"github.com/gorilla/handlers"
-	"github.com/gorilla/mux"
 )
 
 var (
@@ -38,13 +38,7 @@ func main() {
 
 	// Router
 
-	router := mux.NewRouter()
-
-	router.HandleFunc("/", func(rw http.ResponseWriter, req *http.Request) {
-
-		rw.Write([]byte("Hoi!"))
-
-	})
+	router := routing.InitRouting("/v1", db)
 
 	// Server
 
