@@ -1,6 +1,8 @@
 package routing
 
 import (
+	"context"
+	"log"
 	"maus/together-go/database"
 	"net/http"
 	"regexp"
@@ -16,6 +18,8 @@ var emailRegExString string = "" +
 var prefix string
 var db database.Db
 var emailRegEx *regexp.Regexp = regexp.MustCompile(emailRegExString)
+var ctx context.Context
+var cancel context.CancelFunc
 
 func InitRouting(prefix_ string, db_ database.Db) http.Handler {
 	prefix = prefix_
@@ -27,8 +31,26 @@ func InitRouting(prefix_ string, db_ database.Db) http.Handler {
 	// setup routes
 	router.HandleFunc(prefix+"/login", handleLogin).Methods("POST")
 	router.HandleFunc(prefix+"/start", secure(handleStart)).Methods("GET")
+	router.HandleFunc(prefix+"/check", handleCheck).Methods("GET")
+
+	// setup wb hub
+	ctx, cancel = context.WithCancel(context.Background())
+
+	hub := newHub()
+	go hub.run()
+
+	router.HandleFunc(prefix+"/ws", func(rw http.ResponseWriter, req *http.Request) {
+		log.Println("handleWs called")
+		handleWs(hub, rw, req)
+	}).Methods("GET")
 
 	return &myHandler{router}
+}
+
+func CloseRouting() {
+	cancel()
+
+	<-ctx.Done()
 }
 
 type myHandler struct {

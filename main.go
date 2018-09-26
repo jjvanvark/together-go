@@ -10,8 +10,6 @@ import (
 	"os"
 	"os/signal"
 	"time"
-
-	"github.com/gorilla/handlers"
 )
 
 var (
@@ -42,7 +40,7 @@ func main() {
 
 	// Server
 
-	server := &http.Server{Addr: host, Handler: handlers.CompressHandler(router)}
+	server := &http.Server{Addr: host, Handler: router}
 
 	go func() {
 		if err := server.ListenAndServe(); err != nil {
@@ -61,6 +59,8 @@ func main() {
 
 	ctx, _ := context.WithTimeout(context.Background(), 10*time.Second)
 	server.Shutdown(ctx)
+
+	routing.CloseRouting()
 
 	db.Close()
 
